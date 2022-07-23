@@ -250,49 +250,35 @@ LocalStorage.prototype = {
 	ensureDirectory: function (dir) {
 		return new Promise((resolve, reject) => {
 			let result = {dir: dir};
-			//check to see if dir is present
-			fs.exists(dir, (exists) => {
-				if (exists) {
-					return resolve(result);
-				} else {
-					//create the directory
-					fs.mkdir(dir, { recursive: true }, (err) => {
-						if (err) {
-							return reject(err);
-						}
-						this.log('created ' + dir);
-						resolve(result);
-					});
+			//create the directory
+			fs.mkdir(dir, { recursive: true }, (err) => {
+				if (err) {
+					return reject(err);
 				}
+				this.log('created ' + dir);
+				resolve(result);
 			});
 		});
 	},
 
 	readDirectory: function (dir) {
 		return new Promise((resolve, reject) => {
-			//check to see if dir is present
-			fs.exists(dir, (exists) => {
-				if (exists) {
-					//load data
-					fs.readdir(dir, async (err, arr) => {
-						if (err) {
-							return reject(err);
-						}
-						let data = [];
-						try {
-							for (let currentFile of arr) {
-								if (currentFile[0] !== '.') {
-									data.push(await this.readFile(path.join(this.options.dir, currentFile)));
-								}
-							}
-						} catch (err) {
-							reject(err)
-						}
-						resolve(data);
-					});
-				} else {
-					reject(new Error(`[node-persist][readDirectory] ${dir} does not exists!`));
+			//load data
+			fs.readdir(dir, async (err, arr) => {
+				if (err) {
+					return reject(err);
 				}
+				let data = [];
+				try {
+					for (let currentFile of arr) {
+						if (currentFile[0] !== '.') {
+							data.push(await this.readFile(path.join(this.options.dir, currentFile)));
+						}
+					}
+				} catch (err) {
+					reject(err)
+				}
+				resolve(data);
 			});
 		});
 	},
@@ -332,23 +318,15 @@ LocalStorage.prototype = {
 
 	deleteFile: function (file) {
 		return new Promise((resolve, reject) => {
-			fs.exists(file, (exists) => {
-				if (exists) {
-					this.log(`Removing file:${file}`);
-					fs.unlink(file, (err) => {
-						/* Only throw the error if the error is something else */
-						if (err && err.code !== 'ENOENT') {
-							return reject(err);
-						}
-						let result = {file: file, removed: !err, existed: exists};
-						err && this.log(`Failed to remove file:${file} because it doesn't exist anymore.`);
-						resolve(result);
-					});
-				} else {
-					this.log(`Not removing file:${file} because it doesn't exist`);
-					let result = {file: file, removed: false, existed: exists};
-					resolve(result);
+			this.log(`Removing file: ${file}`);
+			fs.unlink(file, (err) => {
+				/* Only throw the error if the error is something else */
+				if (err && err.code !== 'ENOENT') {
+					return reject(err);
 				}
+				let result = {file: file, removed: !err, existed: exists};
+				err && this.log(`Failed to remove file:${file} because it doesn't exist anymore.`);
+				resolve(result);
 			});
 		});
 	},
