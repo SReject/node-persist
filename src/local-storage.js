@@ -152,10 +152,6 @@ LocalStorage.prototype = {
 		return this.values(filter);
 	},
 
-	set: function (key, value, options = {}) {
-		return this.setItem(key, value, options);
-	},
-
 	setItem: function (key, datumValue, options = {}) {
 		let value = this.copy(datumValue);
 		let ttl = this.calcTTL(options.ttl);
@@ -164,10 +160,6 @@ LocalStorage.prototype = {
 		}
 		let datum = {key: key, value: value, ttl: ttl};
 		return this.writeFile(this.getDatumPath(key), datum);
-	},
-
-	update: function (key, value, options = {}) {
-		return this.updateItem(key, value, options);
 	},
 
 	updateItem: async function (key, datumValue, options = {}) {
@@ -188,10 +180,6 @@ LocalStorage.prototype = {
 		} else {
 			return this.setItem(key, datumValue, options);
 		}
-	},
-
-	get: function (key) {
-		return this.getItem(key);
 	},
 
 	getItem: async function (key) {
@@ -219,14 +207,6 @@ LocalStorage.prototype = {
 
 	getDatumPath: function (key) {
 		return path.join(this.options.dir, md5(key));
-	},
-
-	del: function (key) {
-		return this.removeItem(key);
-	},
-
-	rm: function (key) {
-		return this.removeItem(key);
 	},
 
 	removeItem: function (key) {
