@@ -86,8 +86,18 @@ class LocalStorage {
 		this.options = options;
 	}
 
-	data() {
-		return this.readDirectory(this.options.dir);
+	async data() {
+		const files = await readdir(dir);
+
+		let data = [];
+
+		for (let currentFile of files) {
+			if (currentFile[0] !== '.') {
+				data.push(await this.readFile(path.join(this.options.dir, currentFile)));
+			}
+		}
+
+		return data;
 	}
 
 	async keys(filter) {
@@ -200,20 +210,6 @@ class LocalStorage {
 		for (let d of data) {
 			await this.removeItem(d.key);
 		}
-	}
-
-	async readDirectory(dir) {
-		const files = await readdir(dir);
-
-		let data = [];
-
-		for (let currentFile of files) {
-			if (currentFile[0] !== '.') {
-				data.push(await this.readFile(path.join(this.options.dir, currentFile)));
-			}
-		}
-
-		return data;
 	}
 
 	async readFile(file, options = {}) {
