@@ -27,9 +27,7 @@ const isNumber = subject => !isNaN(parseFloat(subject)) && isFinite(subject);
 
 const isDate = subject => Object.prototype.toString.call(subject) === '[object Date]';
 
-const isValidDate = subject => isDate(subject) && !isNaN(subject);
-
-const isFutureDate = subject => isValidDate(subject) && subject.getTime() > (+new Date);
+const isFutureDate = subject => isDate(subject) && !Number.isNaN(subject) && subject.getTime() > (+new Date);
 
 const md5 = data => crypto.createHash('md5').update(data).digest('hex');
 
