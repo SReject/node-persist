@@ -21,43 +21,25 @@ const defaults = {
 
 const defaultTTL = 24 * 60 * 60 * 1000; /* if ttl is truthy but it's not a number, use 24h as default */
 
-const isFunction = function(fn) {
-	return typeof fn === 'function';
-};
+const isFunction = subject => typeof subject === 'function';
 
-const isNumber = function(n) {
-	return !isNaN(parseFloat(n)) && isFinite(n);
-};
+const isNumber = subject => !isNaN(parseFloat(subject)) && isFinite(subject);
 
-const isDate = function(d) {
-	return Object.prototype.toString.call(d) === '[object Date]';
-};
+const isDate = subject => Object.prototype.toString.call(subject) === '[object Date]';
 
-const isValidDate = function(d) {
-	return isDate(d) && !isNaN(d);
-};
+const isValidDate = subject => isDate(subject) && !isNaN(subject);
 
-const isFutureDate = function(d) {
-	return isValidDate(d) && d.getTime() > (+new Date);
-};
+const isFutureDate = subject => isValidDate(subject) && subject.getTime() > (+new Date);
 
-const md5 = function (key) {
-	return crypto.createHash('md5').update(key).digest('hex');
-};
+const md5 = data => crypto.createHash('md5').update(key).digest('hex');
 
-const isValidStorageFileContent = function (content) {
-	return content && content.key;
-};
+const isValidStorageFileContent = content => content && content.key
 
-const isExpired = function (datum) {
-	return datum && datum.ttl && datum.ttl < (new Date()).getTime();
-};
+const isExpired = datum => datum && datum.ttl && datum.ttl < (new Date()).getTime();
 
-const isNotExpired = function (datum) {
-	return !isExpired(datum);
-};
+const isNotExpired = datum => !isExpired(datum);
 
-const resolveDir = function(dir) {
+const resolveDir = dir => {
 	dir = path.normalize(dir);
 	if (path.isAbsolute(dir)) {
 		return dir;
