@@ -3,7 +3,7 @@
  * http://simonlast.org
  */
 
-const fs = require('fs');
+const { writeFile, readFile, readdir, mkdir, unlink } = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
 const pkg = require('../package.json');
@@ -227,88 +227,73 @@ LocalStorage.prototype = {
 		}
 	},
 
-	ensureDirectory: function (dir) {
-		return new Promise((resolve, reject) => {
-			let result = {dir: dir};
-			//create the directory
-			fs.mkdir(dir, { recursive: true }, (err) => {
-				if (err) {
-					return reject(err);
-				}
-				this.log('created ' + dir);
-				resolve(result);
-			});
-		});
+	ensureDirectory: async function (dir) {
+		await mkdir(dir, {recursive: true});
+		this.log('created ' + dir);
+		return {dir: dir};
 	},
 
-	readDirectory: function (dir) {
-		return new Promise((resolve, reject) => {
-			//load data
-			fs.readdir(dir, async (err, arr) => {
-				if (err) {
-					return reject(err);
-				}
-				let data = [];
-				try {
-					for (let currentFile of arr) {
-						if (currentFile[0] !== '.') {
-							data.push(await this.readFile(path.join(this.options.dir, currentFile)));
-						}
-					}
-				} catch (err) {
-					reject(err)
-				}
-				resolve(data);
-			});
-		});
+	readDirectory: async function (dir) {
+		const files = await readdir(dir);
+
+		let data = [];
+
+		for (let currentFile of files) {
+			if (currentFile[0] !== '.') {
+				data.push(await this.readFile(path.join(this.options.dir, currentFile)));
+			}
+		}
+
+		return data;
 	},
 
-	readFile: function (file, options = {}) {
-		return new Promise((resolve, reject) => {
-			fs.readFile(file, this.options.encoding, (err, text) => {
-				if (err) {
-					/* Only throw the error if the error is something else other than the file doesn't exist */
-					if (err.code === 'ENOENT') {
-						this.log(`${file} does not exist, returning undefined value`);
-						resolve(options.raw ? '{}' : {});
-					} else {
-						return reject(err);
-					}
-				}
-				let input = options.raw ? text : this.parse(text);
-				if (!options.raw && !isValidStorageFileContent(input)) {
-					return this.options.forgiveParseErrors ? resolve(options.raw ? '{}' : {}) : reject(new Error(`[node-persist][readFile] ${file} does not look like a valid storage file!`));
-				}
-				resolve(input);
-			});
-		});
+	readFile: async function (file, options = {}) {
+		let data;
+
+		try {
+			data = await readFile(file, this.options.encoding);
+
+		} catch (err) {
+			/* Only throw the error if the error is something else other than the file doesn't exist */
+			if (err.code !== 'ENOENT') {
+				throw err;
+			}
+
+			this.log(`${file} does not exist, returning undefined value`);
+			return options.raw ? '{}' : {};
+		}
+
+		data = options.raw ? data : this.parse(data);
+		if (!options.raw && !isValidStorageFileContent(data)) {
+			if (this.options.forgiveParseErrors) {
+				return options.raw ? '{}' : {};
+			}
+			throw new Error(`[node-persist][readFile] ${file} does not look like a valid storage file!`);
+		}
+		return data;
 	},
 
-	writeFile: function (file, content) {
-		return new Promise((resolve, reject) => {
-			fs.writeFile(file, this.stringify(content), this.options.encoding, (err) => {
-				if (err) {
-					return reject(err);
-				}
-				resolve({file: file, content: content});
-				this.log('wrote: ' + file);
-			});
-		});
+	writeFile: async function (file, content) {
+		await writeFile(file, this.stringify(content), this.options.encoding);
+		this.log('wrote: ' + file);
+		return {file: file, content: content};
 	},
 
-	deleteFile: function (file) {
-		return new Promise((resolve, reject) => {
-			this.log(`Removing file: ${file}`);
-			fs.unlink(file, (err) => {
-				/* Only throw the error if the error is something else */
-				if (err && err.code !== 'ENOENT') {
-					return reject(err);
-				}
-				let result = {file: file, removed: !err, existed: exists};
-				err && this.log(`Failed to remove file:${file} because it doesn't exist anymore.`);
-				resolve(result);
-			});
-		});
+	deleteFile: async function (file) {
+		let result;
+		this.log(`Removing file: ${file}`);
+		try {
+			await unlink(file);
+			result = {file, file, removed: true, existed: true};
+
+		} catch (err) {
+			if (err.code !== 'ENOENT') {
+				throw err;
+			}
+			result = {file: file, removed: false, existed: false};
+			this.log(`Failed to remove file:${file} because it doesn't exist anymore.`);
+		}
+		return result;
 	},
 
 	stringify: function (obj) {
