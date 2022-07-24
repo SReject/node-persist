@@ -229,18 +229,13 @@ class LocalStorage {
 	}
 
 	async deleteFile(file) {
-		let result;
 		try {
 			await unlink(file);
-			result = {file, file, removed: true, existed: true};
-
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
 				throw err;
 			}
-			result = {file: file, removed: false, existed: false};
 		}
-		return result;
 	}
 
 	stringify(obj) {
