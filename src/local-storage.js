@@ -37,8 +37,6 @@ const isValidStorageFileContent = content => content && content.key
 
 const isExpired = datum => datum && datum.ttl && datum.ttl < (new Date()).getTime();
 
-const isNotExpired = datum => !isExpired(datum);
-
 const resolveDir = dir => {
 	dir = path.normalize(dir);
 	if (path.isAbsolute(dir)) {
@@ -146,7 +144,7 @@ LocalStorage.prototype = {
 
 	updateItem: async function (key, datumValue, options = {}) {
 		let previousDatum = await this.getDatum(key);
-		if (previousDatum && isNotExpired(previousDatum)) {
+		if (previousDatum && !isExpired(previousDatum)) {
 			let newDatumValue = this.copy(datumValue);
 			let ttl;
 			if (options.ttl) {
