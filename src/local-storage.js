@@ -41,17 +41,16 @@ const resolveDir = dir => {
 	return path.join(process.cwd(), dir);
 };
 
+class LocalStorage {
 
-const LocalStorage = function (options) {
-	if(!(this instanceof LocalStorage)) {
-		return new LocalStorage(options);
+    constructor(options) {
+		if(!(this instanceof LocalStorage)) {
+			return new LocalStorage(options);
+		}
+		this.setOptions(options);
 	}
-	this.setOptions(options);
-};
 
-LocalStorage.prototype = {
-
-	init: async function (options) {
+	async init(options) {
 		if (options) {
 			this.setOptions(options);
 		}
@@ -60,9 +59,9 @@ LocalStorage.prototype = {
 			this.startExpiredKeysInterval();
 		}
 		return this.options;
-	},
+	}
 
-	setOptions: function (userOptions) {
+	setOptions(userOptions) {
 		let options = {};
 
 		if (!userOptions) {
@@ -86,50 +85,50 @@ LocalStorage.prototype = {
 			options.logging = true;
 		}
 		this.options = options;
-	},
+	}
 
-	data: function () {
+	data() {
 		return this.readDirectory(this.options.dir);
-	},
+	}
 
-	keys: async function (filter) {
+	async keys(filter) {
 		let data = await this.data();
 		if (filter) {
 			data = data.filter(filter);
 		}
 		return data.map(datum => datum.key);
-	},
+	}
 
-	values: async function (filter) {
+	async values(filter) {
 		let data = await this.data();
 		if (filter) {
 			data = data.filter(filter);
 		}
 		return data.map(datum => datum.value);
-	},
+	}
 
-	length: async function (filter) {
+	async length(filter) {
 		let data = await this.data();
 		if (filter) {
 			data = data.filter(filter);
 		}
 		return data.length;
-	},
+	}
 
-	forEach: async function(callback) {
+	async forEach(callback) {
 		let data = await this.data();
 		for (let d of data) {
 			await callback(d);
 		}
-	},
+	}
 
-	valuesWithKeyMatch: function(match) {
+	valuesWithKeyMatch(match) {
 		match = match || /.*/;
 		let filter = match instanceof RegExp ? datum => match.test(datum.key) : datum => datum.key.indexOf(match) !== -1;
 		return this.values(filter);
-	},
+	}
 
-	setItem: function (key, datumValue, options = {}) {
+	setItem(key, datumValue, options = {}) {
 		let value = this.copy(datumValue);
 		let ttl = this.calcTTL(options.ttl);
 		if (this.logging) {
@@ -137,9 +136,9 @@ LocalStorage.prototype = {
 		}
 		let datum = {key: key, value: value, ttl: ttl};
 		return this.writeFile(this.getDatumPath(key), datum);
-	},
+	}
 
-	updateItem: async function (key, datumValue, options = {}) {
+	async updateItem(key, datumValue, options = {}) {
 		let previousDatum = await this.getDatum(key);
 		if (previousDatum && !isExpired(previousDatum)) {
 			let newDatumValue = this.copy(datumValue);
@@ -157,9 +156,9 @@ LocalStorage.prototype = {
 		} else {
 			return this.setItem(key, datumValue, options);
 		}
-	},
+	}
 
-	getItem: async function (key) {
+	async getItem(key) {
 		let datum = await this.getDatum(key);
 		if (isExpired(datum)) {
 			this.log(`${key} has expired`);
@@ -167,50 +166,50 @@ LocalStorage.prototype = {
 		} else {
 			return datum.value;
 		}
-	},
+	}
 
-	getDatum: function (key) {
+	getDatum(key) {
 		return this.readFile(this.getDatumPath(key));
-	},
+	}
 
-	getRawDatum: function (key) {
+	getRawDatum(key) {
 		return this.readFile(this.getDatumPath(key), {raw: true});
-	},
+	}
 
-	getDatumValue: async function (key) {
+	async getDatumValue(key) {
 		let datum = await this.getDatum(key);
 		return datum && datum.value;
-	},
+	}
 
-	getDatumPath: function (key) {
+	getDatumPath(key) {
 		return path.join(this.options.dir, md5(key));
-	},
+	}
 
-	removeItem: function (key) {
+	removeItem(key) {
 		return this.deleteFile(this.getDatumPath(key));
-	},
+	}
 
-	removeExpiredItems: async function () {
+	async removeExpiredItems() {
 		let keys = await this.keys(isExpired);
 		for (let key of keys) {
 			await this.removeItem(key);
 		}
-	},
+	}
 
-	clear: async function () {
+	async clear() {
 		let data = await this.data();
 		for (let d of data) {
 			await this.removeItem(d.key);
 		}
-	},
+	}
 
-	ensureDirectory: async function (dir) {
+	async ensureDirectory(dir) {
 		await mkdir(dir, {recursive: true});
 		this.log('created ' + dir);
 		return {dir: dir};
-	},
+	}
 
-	readDirectory: async function (dir) {
+	async readDirectory(dir) {
 		const files = await readdir(dir);
 
 		let data = [];
@@ -222,9 +221,9 @@ LocalStorage.prototype = {
 		}
 
 		return data;
-	},
+	}
 
-	readFile: async function (file, options = {}) {
+	async readFile(file, options = {}) {
 		let data;
 
 		try {
@@ -248,15 +247,15 @@ LocalStorage.prototype = {
 			throw new Error(`[node-persist][readFile] ${file} does not look like a valid storage file!`);
 		}
 		return data;
-	},
+	}
 
-	writeFile: async function (file, content) {
+	async writeFile(file, content) {
 		await writeFile(file, this.stringify(content), this.options.encoding);
 		this.log('wrote: ' + file);
 		return {file: file, content: content};
-	},
+	}
 
-	deleteFile: async function (file) {
+	async deleteFile(file) {
 		let result;
 		this.log(`Removing file: ${file}`);
 		try {
@@ -271,13 +270,13 @@ LocalStorage.prototype = {
 			this.log(`Failed to remove file:${file} because it doesn't exist anymore.`);
 		}
 		return result;
-	},
+	}
 
-	stringify: function (obj) {
+	stringify(obj) {
 		return this.options.stringify(obj);
-	},
+	}
 
-	parse: function(str) {
+	parse(str) {
 		if (str == null) {
 			return undefined;
 		}
@@ -287,31 +286,31 @@ LocalStorage.prototype = {
 			this.log('parse error: ', this.stringify(e), 'for:', str);
 			return undefined;
 		}
-	},
+	}
 
-	copy: function (value) {
+	copy(value) {
 		// don't copy literals since they're passed by value
 		if (typeof value !== 'object') {
 			return value;
 		}
 		return this.parse(this.stringify(value));
-	},
+	}
 
-	startExpiredKeysInterval: function () {
+	startExpiredKeysInterval() {
 		this.stopExpiredKeysInterval();
 		this._expiredKeysInterval = setInterval(this.removeExpiredItems.bind(this), this.options.expiredInterval);
 		this._expiredKeysInterval.unref && this._expiredKeysInterval.unref();
-	},
+	}
 
-	stopExpiredKeysInterval: function () {
+	stopExpiredKeysInterval() {
 		clearInterval(this._expiredKeysInterval);
-	},
+	}
 
-	log: function () {
+	log() {
 		this.options && this.options.logging && console.log.apply(console, arguments);
-	},
+	}
 
-	calcTTL: function (ttl) {
+	calcTTL(ttl) {
 		let now = new Date();
 		let nowts = now.getTime();
 
