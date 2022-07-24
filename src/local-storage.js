@@ -54,7 +54,6 @@ class LocalStorage {
 		if (options) {
 			this.setOptions(options);
 		}
-		await this.ensureDirectory(this.options.dir);
 		if (this.options.expiredInterval) {
 			this.startExpiredKeysInterval();
 		}
@@ -203,12 +202,6 @@ class LocalStorage {
 		}
 	}
 
-	async ensureDirectory(dir) {
-		await mkdir(dir, {recursive: true});
-		this.log('created ' + dir);
-		return {dir: dir};
-	}
-
 	async readDirectory(dir) {
 		const files = await readdir(dir);
 
@@ -250,6 +243,7 @@ class LocalStorage {
 	}
 
 	async writeFile(file, content) {
+		await mkdir(path.dirname(file));
 		await writeFile(file, this.stringify(content), this.options.encoding);
 		this.log('wrote: ' + file);
 		return {file: file, content: content};
