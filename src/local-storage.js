@@ -13,7 +13,6 @@ const defaults = {
 	stringify: JSON.stringify,
 	parse: JSON.parse,
 	encoding: 'utf8',
-	logging: false,
 	expiredInterval: 2 * 60 * 1000, /* every 2 minutes */
 	forgiveParseErrors: false,
 	ttl: false
@@ -77,12 +76,6 @@ class LocalStorage {
 			options.ttl = options.ttl ? isNumber(options.ttl) && options.ttl > 0 ? options.ttl : defaultTTL : false;
 		}
 
-		// Check to see if we received an external logging function
-		if (isFunction(options.logging)) {
-			// Overwrite log function with external logging function
-			this.log = options.logging;
-			options.logging = true;
-		}
 		this.options = options;
 	}
 
@@ -140,9 +133,6 @@ class LocalStorage {
 	setItem(key, datumValue, options = {}) {
 		let value = this.copy(datumValue);
 		let ttl = this.calcTTL(options.ttl);
-		if (this.logging) {
-			this.log(`set ('${key}': '${this.stringify(value)}')`);
-		}
 		let datum = {key: key, value: value, ttl: ttl};
 		return this.writeFile(this.getDatumPath(key), datum);
 	}
@@ -157,9 +147,6 @@ class LocalStorage {
 			} else {
 				ttl = previousDatum.ttl;
 			}
-			if (this.logging) {
-				this.log(`update ('${key}': '${this.stringify(newDatumValue)}')`);
-			}
 			let datum = {key: key, value: newDatumValue, ttl: ttl};
 			return this.writeFile(this.getDatumPath(key), datum);
 		} else {
@@ -170,7 +157,6 @@ class LocalStorage {
 	async getItem(key) {
 		let datum = await this.getDatum(key);
 		if (isExpired(datum)) {
-			this.log(`${key} has expired`);
 			await this.removeItem(key);
 		} else {
 			return datum.value;
@@ -223,8 +209,6 @@ class LocalStorage {
 			if (err.code !== 'ENOENT') {
 				throw err;
 			}
-
-			this.log(`${file} does not exist, returning undefined value`);
 			return options.raw ? '{}' : {};
 		}
 
@@ -241,13 +225,11 @@ class LocalStorage {
 	async writeFile(file, content) {
 		await mkdir(path.dirname(file));
 		await writeFile(file, this.stringify(content), this.options.encoding);
-		this.log('wrote: ' + file);
 		return {file: file, content: content};
 	}
 
 	async deleteFile(file) {
 		let result;
-		this.log(`Removing file: ${file}`);
 		try {
 			await unlink(file);
 			result = {file, file, removed: true, existed: true};
@@ -257,7 +239,6 @@ class LocalStorage {
 				throw err;
 			}
 			result = {file: file, removed: false, existed: false};
-			this.log(`Failed to remove file:${file} because it doesn't exist anymore.`);
 		}
 		return result;
 	}
@@ -273,7 +254,6 @@ class LocalStorage {
 		try {
 			return this.options.parse(str);
 		} catch(e) {
-			this.log('parse error: ', this.stringify(e), 'for:', str);
 			return undefined;
 		}
 	}
@@ -294,10 +274,6 @@ class LocalStorage {
 
 	stopExpiredKeysInterval() {
 		clearInterval(this._expiredKeysInterval);
-	}
-
-	log() {
-		this.options && this.options.logging && console.log.apply(console, arguments);
 	}
 
 	calcTTL(ttl) {
