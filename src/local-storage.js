@@ -5,7 +5,7 @@
 
 const { writeFile, readFile, readdir, mkdir, unlink } = require('fs/promises');
 const path = require('path');
-const crypto = require('crypto');
+const { createHash } = require('crypto');
 const pkg = require('../package.json');
 
 const defaults = {
@@ -29,7 +29,7 @@ const isDate = subject => Object.prototype.toString.call(subject) === '[object D
 
 const isFutureDate = subject => isDate(subject) && !Number.isNaN(subject) && subject.getTime() > (+new Date);
 
-const md5 = data => crypto.createHash('md5').update(data).digest('hex');
+const md5 = data => createHash('md5').update(data).digest('hex');
 
 const isExpired = datum => datum && datum.ttl && datum.ttl < (new Date()).getTime();
 
