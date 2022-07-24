@@ -33,8 +33,6 @@ const isFutureDate = subject => isValidDate(subject) && subject.getTime() > (+ne
 
 const md5 = data => crypto.createHash('md5').update(data).digest('hex');
 
-const isValidStorageFileContent = content => content && content.key
-
 const isExpired = datum => datum && datum.ttl && datum.ttl < (new Date()).getTime();
 
 const resolveDir = dir => {
@@ -44,6 +42,7 @@ const resolveDir = dir => {
 	}
 	return path.join(process.cwd(), dir);
 };
+
 
 const LocalStorage = function (options) {
 	if(!(this instanceof LocalStorage)) {
@@ -244,7 +243,7 @@ LocalStorage.prototype = {
 		}
 
 		data = options.raw ? data : this.parse(data);
-		if (!options.raw && !isValidStorageFileContent(data)) {
+		if (!options.raw && data && data.key) {
 			if (this.options.forgiveParseErrors) {
 				return options.raw ? '{}' : {};
 			}
