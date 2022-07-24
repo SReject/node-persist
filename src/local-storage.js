@@ -20,8 +20,6 @@ const defaults = {
 
 const defaultTTL = 24 * 60 * 60 * 1000; /* if ttl is truthy but it's not a number, use 24h as default */
 
-const isFunction = subject => typeof subject === 'function';
-
 const isNumber = subject => !isNaN(parseFloat(subject)) && isFinite(subject);
 
 const isDate = subject => Object.prototype.toString.call(subject) === '[object Date]';
