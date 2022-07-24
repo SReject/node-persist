@@ -31,7 +31,7 @@ const isValidDate = subject => isDate(subject) && !isNaN(subject);
 
 const isFutureDate = subject => isValidDate(subject) && subject.getTime() > (+new Date);
 
-const md5 = data => crypto.createHash('md5').update(key).digest('hex');
+const md5 = data => crypto.createHash('md5').update(data).digest('hex');
 
 const isValidStorageFileContent = content => content && content.key
 
