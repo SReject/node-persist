@@ -243,13 +243,8 @@ class LocalStorage {
 	}
 
 	parse(str) {
-		if (str == null) {
-			return undefined;
-		}
-		try {
+		if (str != null) {
 			return this.options.parse(str);
-		} catch(e) {
-			return undefined;
 		}
 	}
 
